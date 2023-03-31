@@ -177,7 +177,10 @@ def change_pagecontent(pathname):
     elif (pathname == "/page1"):
         return [
             html.Div([
-                dcc.Store(id='local', storage_type='local'),
+                dcc.Store(id='local_param', storage_type='local'),
+                dcc.Store(id='local_contur', storage_type='local'),
+                dcc.Store(id='local_teplo', storage_type='local'),
+                dcc.Store(id='local_line', storage_type='local'),
                 dbc.Row([
                     dbc.Col([html.Div('Анализ работы скважины')], width=12,
                             style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
@@ -523,7 +526,8 @@ def add_row(n_clicks, rows, columns):
     return rows
 
 
-@app.callback(Output('local', 'data'),
+@app.callback(Output('local_param', 'data'),
+              Output('local_contur', 'data'),
               Input('table-geo', 'data'),
               Input('table_wells', 'data'),
               Input('submit-val', 'n_clicks'))
@@ -545,36 +549,84 @@ def on_data(rows_in_geo, rows_in_wells, n_clicks):
     #rw = [row.get('Радиус скважины, м', None) for row in rows_in_wells]
     #r = rw[0]
     t = np.logspace(-1, 4, 100)
-    result = []
-    result.append([i for i in t])
-    result.append(pd_ei(0.1, t, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f) / 1000000)
+    result_well_param = []
+    result_well_param.append([i for i in t])
+    result_well_param.append(pd_ei(0.1, t, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f) / 1000000)
+
+    # зададим параметры воронки депрессии
+    r_e = 300
+
+    # зададим координатную сетку основываясь на параметрах
+    x = np.linspace(-r_e, r_e, 100)
+    y = np.linspace(-r_e, r_e, 100)
+    z = np.linspace(-h / 2, h / 2, 100)
+    # рассчитаем вспомогательные вектора для построения сетки
+    xv, yv = np.meshgrid(x, y)
+    xvz, zvz = np.meshgrid(x, z)
+    # зададим координаты скважины
+    xwell1 = 0
+    ywell1 = 0
+    zwell1 = z
+    # рассчитаем значение давлений во всех точках сетки
+    p_mesh_full = pd_ei(r=((xv - xwell1) ** 2 + (yv - ywell1) ** 2 + (
+    [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
+                        t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)
+    p_mesh_xz = pd_ei(r=((xv - xwell1) ** 2 + (0) ** 2 + (
+    [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
+                      t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)
+    result_contur = []
+    result_contur.append(list(x))
+    result_contur.append(list(y))
+    result_contur.append(list(p_mesh_full))
+    # удалим значения за контуром, так как в данном случае они не имеют смысла
+    # p_mesh[np.where(p_mesh > pres)] = pres
     if (n_clicks %2 == 1):
-        return result
+        return result_well_param, result_contur
     else:
-        return [[0], [0]]
+        return [[0], [0]], [[0], [0], [0]]
 
 @app.callback(Output("graph_param_wells", 'figure'),
               Input('submit-val', 'n_clicks'),
-              Input('local', 'modified_timestamp'),
-              State('local', 'data'))
+              Input('local_param', 'modified_timestamp'),
+              State('local_param', 'data'))
 def on_data(n_clicks, ts, data):
-    data = list(data)
     if n_clicks is None:
         # prevent the None callbacks is important with the store component.
         # you don't want to update the store for nothing.
         raise PreventUpdate
     if ts is None:
         raise PreventUpdate
-    print(type(list(data)))
-    print([i for i in np.array(list(data)[1])])
     return {
         'data':
             [go.Scatter(x=data[0],
                         y=data[1],
                         marker=dict(size=18))
-            ],
+             ],
+        'layout': {'height': '250', 'width': '700', 'paper_bgcolor': "rgba(0, 0, 0, 0)",
+                   'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=10, r=0, t=0, b=15)}
+    }
+
+@app.callback(Output("graph_contur", 'figure'),
+              Input('submit-val', 'n_clicks'),
+              Input('local_contur', 'modified_timestamp'),
+              State('local_contur', 'data'))
+def on_data(n_clicks, ts, data):
+    if n_clicks is None:
+        # prevent the None callbacks is important with the store component.
+        # you don't want to update the store for nothing.
+        raise PreventUpdate
+    if ts is None:
+        raise PreventUpdate
+    #print(list(data))
+    #print([i for i in np.array(data[0])])
+    return {
+        'data':[go.Contour( x = data[0],
+                            y = data[1],
+                            z = data[2])
+             ],
         'layout' : {'height':'250', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=10, r=0, t=0, b=15)}
     }
+
 
 # Запуск
 if __name__ == '__main__':

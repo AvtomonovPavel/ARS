@@ -23,18 +23,18 @@ mp.dps = 15; mp.pretty = True
 ###Исходные данные
 """
 
-q = 0.00092 # [m3/c] - дебит скважины
-B = 1.25 # [m3/m3] - объемный коэффициент
-k = 50*1e-15 # [m2] - изотропная проницаемость
-h = 9.144 # [m] - толщина пласта
-f = 0.3 # [] - пористость
-c = 1.47*1e-9 # [1/Pa] - сжимаемость флюида
-cf = 1 * 1e-9 # [1/Pa] - сжимаемость породы
-ct = (c + cf) # [1/Pa] - общая породы
-rw = 0.1524 # [m] - радиус ствола скважины
-r = 0.1524 # [m] - радиальная координата и расстояние
-mu = 3*1e-3 # [Pa*c] - вязкость
-eta = k / (mu * f * ct) # коэф пьезопроводности
+q = 0.00092  # [m3/c] - дебит скважины
+B = 1.25  # [m3/m3] - объемный коэффициент
+k = 50*1e-15  # [m2] - изотропная проницаемость
+h = 9.144  # [m] - толщина пласта
+f = 0.3  # [] - пористость
+c = 1.47*1e-9  # [1/Pa] - сжимаемость флюида
+cf = 1 * 1e-9  # [1/Pa] - сжимаемость породы
+ct = (c + cf)  # [1/Pa] - общая породы
+rw = 0.1524  # [m] - радиус ствола скважины
+r = 0.1524  # [m] - радиальная координата и расстояние
+mu = 3*1e-3  # [Pa*c] - вязкость
+eta = k / (mu * f * ct)  # коэф пьезопроводности
 l = rw
 PI = 3.44738E+7
 
@@ -47,7 +47,7 @@ $$ \Delta p(r,t) = - \dfrac {q B \mu} {4 \pi k h} E_i(- \dfrac {r^2} {4 \eta t})
 
 # Решение для линейного источника
 def pd_ei (r, t, q = q, B = B, k = k, h = h, mu = mu, eta = eta, f = f):
-    return -q * B * mu /(4 * np.pi * k * h)  * sc.expi(-r ** 2 /(4 * eta * t))
+    return -q * B * mu /(4 * np.pi * k * h) * sc.expi(-r ** 2 /(4 * eta * t))
 
 # Решение с учетом конечного радиуса скважины
 def pd_lapl (s, r = r, r_w = rw, q = q, B = B, k = k, h = h, mu = mu, eta = eta, f = f):
@@ -104,14 +104,7 @@ import dash_bootstrap_components as dbc
 from plotly.subplots import make_subplots
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
-q = 0.00092 # [m3/c] - дебит скважины
-c = 1.47*1e-9 # [1/Pa] - сжимаемость флюида
-cf = 1 * 1e-9 # [1/Pa] - сжимаемость породы
-ct = (c + cf) # [1/Pa] - общая породы
-rw = 0.1524 # [m] - радиус ствола скважины
-r = 0.1524 # [m] - радиальная координата и расстояние
-eta = k / (mu * f * ct) # коэф пьезопроводности
-l = rw
+
 
 params_geo_table = [
     'Объемный коэффициент, м3/м3', 'Проницаемость, мД', 'Толщина пласта, м', 'Пористость',
@@ -190,6 +183,8 @@ def change_pagecontent(pathname):
                             style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
                                    'color': 'black'}),
                 ]),
+                html.Hr(),
+                html.Div(id="number-out"),
                 dbc.Row([
                     dbc.Col([
                         dbc.Row([
@@ -251,8 +246,8 @@ def change_pagecontent(pathname):
                         dbc.Row([
                             dash_table.DataTable(
                                 id='table_wells',
-                                columns=[{'name': 'Скважина / Параметры',
-                                         'id': 'Well/Param'}]+[{
+                                columns=[{'name': 'Скважина',
+                                         'id': 'Well'}]+[{
                                     'name': '{}'.format(i),
                                     'id': '{}'.format(i),
                                     #'deletable': True,
@@ -289,7 +284,7 @@ def change_pagecontent(pathname):
                 ]),
                 dbc.Row([
                     dbc.Col([
-                        dbc.Button( "Submit",id='submit-val', n_clicks=0),
+                        dbc.Button( "Start / Stop", id='submit-val', n_clicks=0),
                         html.Div(id='container-button-basic',
                                  children='Press submit')],  style={"margin-left":14})
                     ]),
@@ -478,15 +473,30 @@ def update_columns(n_clicks, value, existing_columns):
     Input('table_wells', 'data'),
     Input('table_wells', 'columns'))
 def display_output(rows, columns):
+    colors = []
+    types = []
+    type_wells = [row.get('Тип скважины', None) for row in rows]
+    for i in type_wells:
+        if (i == "0"):
+            colors.append("blue")
+            types.append("Добывающая")
+        elif((i == "1")):
+            colors.append("red")
+            types.append("Добывающая")
+        else:
+            types.append("Неверно определен тип")
+
     return {
         'data':
             [go.Scatter(x=([row.get('X координата', None) for row in rows]),
                         y=([row.get('Y координата', None) for row in rows]),
                         mode='markers',
-                        marker=dict(size=18))
+                        marker=dict(size=18, color=colors),
+                        showlegend=True)
             ],
         'layout' : {'height':'250', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=10, r=0, t=0, b=15)}
     }
+
 
 # CALLBACKS OF ZERO PAGE
 @app.callback(Output("page-content", "children"),
@@ -513,6 +523,58 @@ def add_row(n_clicks, rows, columns):
     return rows
 
 
+@app.callback(Output('local', 'data'),
+              Input('table-geo', 'data'),
+              Input('table_wells', 'data'),
+              Input('submit-val', 'n_clicks'))
+def on_data(rows_in_geo, rows_in_wells, n_clicks):
+    if n_clicks is None:
+        # prevent the None callbacks is important with the store component.
+        # you don't want to update the store for nothing.
+        raise PreventUpdate
+    # Data from geoTable
+    B = float(rows_in_geo[0]['Value'])
+    k = float(rows_in_geo[1]['Value']) * 10 ** (-15)  # [m2]
+    h = float(rows_in_geo[2]['Value'])
+    f = float(rows_in_geo[3]['Value'])
+    ct = float(rows_in_geo[4]['Value']) * 10 ** (-6)
+    mu = float(rows_in_geo[5]['Value']) * 10 ** (-3)
+    PI = float(rows_in_geo[6]['Value']) * 10 ** (6)
+
+    #q = [row.get('Дебит скважины, м3/сут', None) / 86400 for row in rows_in_wells]
+    #rw = [row.get('Радиус скважины, м', None) for row in rows_in_wells]
+    #r = rw[0]
+    t = np.logspace(-1, 4, 100)
+    result = []
+    result.append([i for i in t])
+    result.append(pd_ei(0.1, t, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f) / 1000000)
+    if (n_clicks %2 == 1):
+        return result
+    else:
+        return [[0], [0]]
+
+@app.callback(Output("graph_param_wells", 'figure'),
+              Input('submit-val', 'n_clicks'),
+              Input('local', 'modified_timestamp'),
+              State('local', 'data'))
+def on_data(n_clicks, ts, data):
+    data = list(data)
+    if n_clicks is None:
+        # prevent the None callbacks is important with the store component.
+        # you don't want to update the store for nothing.
+        raise PreventUpdate
+    if ts is None:
+        raise PreventUpdate
+    print(type(list(data)))
+    print([i for i in np.array(list(data)[1])])
+    return {
+        'data':
+            [go.Scatter(x=data[0],
+                        y=data[1],
+                        marker=dict(size=18))
+            ],
+        'layout' : {'height':'250', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=10, r=0, t=0, b=15)}
+    }
 
 # Запуск
 if __name__ == '__main__':

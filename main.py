@@ -310,7 +310,7 @@ def change_pagecontent(pathname):
 
                     dbc.Col([
                         dbc.Row([
-                            dbc.Col([html.Div('Контурная карта давлений')
+                            dbc.Col([html.Div('Карта давлений')
                                      ], width=12,
                                     style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                            'margin-top': 10,
@@ -318,10 +318,10 @@ def change_pagecontent(pathname):
                         ]),
                         dbc.Row([
                             dbc.Col([
-                                     dcc.Dropdown(id='dropdown-contur', options=['XY', 'XZ', 'YZ'], value='XY'),
+                                     dcc.Dropdown(id='dropdown-contur', options=["Контурная карта", "Тепловая карта"], value="Контурная карта"),
                                      ], width=4,
                                     style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
-                                           'margin-top': 10,
+                                           'margin-top': 10,'margin-left': 20,
                                            'color': 'black'},
 
                             ),
@@ -347,7 +347,7 @@ def change_pagecontent(pathname):
                         ]),
                         dbc.Row([
                             dbc.Col([
-                                dcc.Dropdown(id='dropdown-contur', options=['XY', 'XZ', 'YZ'], value='XY'),
+                                dcc.Dropdown(id='dropdown-teplo', options=['XY', 'XZ', 'YZ'], value='XY'),
                             ], width=4,
                                 style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                        'margin-top': 10,
@@ -570,10 +570,10 @@ def on_data(rows_in_geo, rows_in_wells, n_clicks):
     # рассчитаем значение давлений во всех точках сетки
     p_mesh_full = pd_ei(r=((xv - xwell1) ** 2 + (yv - ywell1) ** 2 + (
     [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
-                        t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)
+                        t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)/1000000
     p_mesh_xz = pd_ei(r=((xv - xwell1) ** 2 + (0) ** 2 + (
     [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
-                      t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)
+                      t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f) /1000000
     result_contur = []
     result_contur.append(list(x))
     result_contur.append(list(y))
@@ -607,25 +607,36 @@ def on_data(n_clicks, ts, data):
     }
 
 @app.callback(Output("graph_contur", 'figure'),
+              Input('dropdown-contur', 'value'),
               Input('submit-val', 'n_clicks'),
               Input('local_contur', 'modified_timestamp'),
               State('local_contur', 'data'))
-def on_data(n_clicks, ts, data):
+def on_data(type_map, n_clicks, ts, data):
     if n_clicks is None:
         # prevent the None callbacks is important with the store component.
         # you don't want to update the store for nothing.
         raise PreventUpdate
     if ts is None:
         raise PreventUpdate
-    #print(list(data))
+    print(list(type_map))
     #print([i for i in np.array(data[0])])
-    return {
+    if (type_map != "Тепловая карта"):
+        return {
         'data':[go.Contour( x = data[0],
                             y = data[1],
                             z = data[2])
              ],
-        'layout' : {'height':'250', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=10, r=0, t=0, b=15)}
-    }
+        'layout' : {'height':'300', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=30, r=0, t=10, b=30)}
+        }
+    else:
+        return {
+            'data': [go.Heatmap(x=data[0],
+                                y=data[1],
+                                z=data[2])
+                     ],
+            'layout': {'height': '300', 'width': '700', 'paper_bgcolor': "rgba(0, 0, 0, 0)",
+                       'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=30, r=0, t=10, b=30)}
+        }
 
 
 # Запуск

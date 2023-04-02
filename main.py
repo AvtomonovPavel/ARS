@@ -103,6 +103,7 @@ from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
 from plotly.subplots import make_subplots
 from dash.exceptions import PreventUpdate
+import plotly.figure_factory as ff
 from dash.dependencies import Input, Output, State
 
 
@@ -318,7 +319,7 @@ def change_pagecontent(pathname):
                         ]),
                         dbc.Row([
                             dbc.Col([
-                                     dcc.Dropdown(id='dropdown-contur', options=["Контурная карта", "Тепловая карта"], value="Контурная карта"),
+                                     dcc.Dropdown(id='dropdown-contur', options=["Контурная карта", "Тепловая карта", "Линии тока"], value="Контурная карта"),
                                      ], width=4,
                                     style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                            'margin-top': 10,'margin-left': 20,
@@ -372,7 +373,7 @@ def change_pagecontent(pathname):
                             dbc.Col([
                                 dcc.Graph(id = "graph_line", figure=go.Figure(
                                     data=[go.Scatter(x=[100, 200, 300], y=[300, 200, 300], marker=dict(size=18))],
-                                    layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)", margin=dict(l=0, r=0, t=0, b=0))))
+                                    layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)",margin=dict(l=0, r=0, t=0, b=0))))
                             ], style={}),
                         ]),
 
@@ -476,27 +477,24 @@ def update_columns(n_clicks, value, existing_columns):
     Input('table_wells', 'data'),
     Input('table_wells', 'columns'))
 def display_output(rows, columns):
-    colors = []
-    types = []
-    type_wells = [row.get('Тип скважины', None) for row in rows]
-    for i in type_wells:
-        if (i == "0"):
-            colors.append("blue")
-            types.append("Добывающая")
-        elif((i == "1")):
-            colors.append("red")
-            types.append("Добывающая")
-        else:
-            types.append("Неверно определен тип")
+    trace_list = []
+    for row in rows:
+        if (row.get('Тип скважины', None) == "0"):
+            trace_list.append(go.Scatter(visible=True, x=[row.get('X координата', None)],
+                                         y=[row.get('Y координата', None)], line=dict(color='blue', dash='dot'),marker=dict(size=30), name="Добывающая"))
+        elif((row.get('Тип скважины', None) == "1")):
+            trace_list.append(go.Scatter(visible=True, x=[row.get('X координата', None)],
+                                         y=[row.get('Y координата', None)], line=dict(color='red', dash='dot'),marker=dict(size=30),
+                                         name="Нагнетательная"))
 
+        else:
+            trace_list.append(go.Scatter(visible=True, x=[row.get('X координата', None)],
+                                         y=[row.get('Y координата', None)], line=dict(color='black', dash='dot'),marker=dict(size=30),
+                                         name="Ошибка в определении типа"))
+
+    data = [val for sublist in [trace_list] for val in sublist]
     return {
-        'data':
-            [go.Scatter(x=([row.get('X координата', None) for row in rows]),
-                        y=([row.get('Y координата', None) for row in rows]),
-                        mode='markers',
-                        marker=dict(size=18, color=colors),
-                        showlegend=True)
-            ],
+        'data':data,
         'layout' : {'height':'250', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=10, r=0, t=0, b=15)}
     }
 
@@ -571,13 +569,11 @@ def on_data(rows_in_geo, rows_in_wells, n_clicks):
     p_mesh_full = pd_ei(r=((xv - xwell1) ** 2 + (yv - ywell1) ** 2 + (
     [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
                         t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f)/1000000
-    p_mesh_xz = pd_ei(r=((xv - xwell1) ** 2 + (0) ** 2 + (
-    [[(zvz[i][j] - zwell1[i]) ** 2 for i in range(x.size)] for j in range(y.size)])) ** 0.5,
-                      t=100000000, q = 0.00092, B = B, k = k, h = h, mu = mu, eta = eta, f = f) /1000000
+
     result_contur = []
     result_contur.append(list(x))
     result_contur.append(list(y))
-    result_contur.append(list(p_mesh_full))
+    result_contur.append(p_mesh_full)
     # удалим значения за контуром, так как в данном случае они не имеют смысла
     # p_mesh[np.where(p_mesh > pres)] = pres
     if (n_clicks %2 == 1):
@@ -603,7 +599,7 @@ def on_data(n_clicks, ts, data):
                         marker=dict(size=18))
              ],
         'layout': {'height': '250', 'width': '700', 'paper_bgcolor': "rgba(0, 0, 0, 0)",
-                   'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=10, r=0, t=0, b=15)}
+                   'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=20, r=0, t=20, b=15)}
     }
 
 @app.callback(Output("graph_contur", 'figure'),
@@ -618,9 +614,11 @@ def on_data(type_map, n_clicks, ts, data):
         raise PreventUpdate
     if ts is None:
         raise PreventUpdate
-    print(list(type_map))
+    #print(data[0])
+    #print(data[1])
+    #print(np.gradient(data[2],axis=1))
     #print([i for i in np.array(data[0])])
-    if (type_map != "Тепловая карта"):
+    if (type_map == "Контурная карта"):
         return {
         'data':[go.Contour( x = data[0],
                             y = data[1],
@@ -628,7 +626,7 @@ def on_data(type_map, n_clicks, ts, data):
              ],
         'layout' : {'height':'300', 'width':'700', 'paper_bgcolor':"rgba(0, 0, 0, 0)",'plot_bgcolor':"rgba(0, 0, 0, 0)", 'margin':dict(l=30, r=0, t=10, b=30)}
         }
-    else:
+    elif (type_map == "Тепловая карта"):
         return {
             'data': [go.Heatmap(x=data[0],
                                 y=data[1],
@@ -637,6 +635,26 @@ def on_data(type_map, n_clicks, ts, data):
             'layout': {'height': '300', 'width': '700', 'paper_bgcolor': "rgba(0, 0, 0, 0)",
                        'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=30, r=0, t=10, b=30)}
         }
+    else:
+        x1 = data[0]
+        x11 = data[0]
+        y1 = data[1]
+        u1 = (np.gradient(data[2], axis=1))
+        v1 = (np.gradient(data[2], axis=0))
+        print(data[0])
+        print(data[1])
+        print((np.gradient(list(data[2]), axis=1)))
+        print((np.gradient(list(data[2]), axis=0)))
+        fig = go.Figure(ff.create_streamline(
+                                x=x1,
+                                y=y1,
+                                u=u1,
+                                v=v1,
+                                arrow_scale=10))
+        fig.update_layout({'paper_bgcolor': "rgba(0, 0, 0, 0)",
+                       'plot_bgcolor': "rgba(0, 0, 0, 0)", 'margin': dict(l=30, r=0, t=10, b=30)})
+        return fig
+
 
 
 # Запуск

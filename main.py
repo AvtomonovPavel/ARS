@@ -188,7 +188,11 @@ def change_pagecontent(pathname):
                                    'color': 'black'}),
                 ]),
                 html.Hr(),
-                html.Div(id="number-out"),
+                dbc.Row([
+                    dbc.Col([html.Div('Исходные данные')], width=12,
+                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
+                                   'color': 'black', 'background-color': '#edf3f4'}),
+                ]),
                 dbc.Row([
                     dbc.Col([
                         dbc.Row([
@@ -238,11 +242,12 @@ def change_pagecontent(pathname):
 
                         ], style = {'margin-top': 60}),
             ]),
+
                 dbc.Row([
                     dbc.Col([
                         dbc.Row([
                             dbc.Col([
-                                html.Div('Характеристика скважины')], width=12,
+                                html.Div('Данные по скважинам')], width=12,
                                 style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                        'margin-top': 10,
                                        'color': 'black'}),
@@ -285,6 +290,241 @@ def change_pagecontent(pathname):
 
 
                     ]),
+                ]),
+                dbc.Row([
+                    dbc.Col([html.Div('Модель скважины')], width=12,
+                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
+                                   'color': 'black', 'background-color': '#edf3f4'}),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Характеристика скважины')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dash_table.DataTable(
+                                id='table_model_wells',
+                                columns=[{'name': 'Скважина',
+                                          'id': 'Well'}] + [{
+                                    'name': '{}'.format(i),
+                                    'id': '{}'.format(i),
+                                    # 'deletable': True,
+                                    # 'renamable': True
+                                } for i in params_well_table],
+                                data=[
+
+                                ],
+                                editable=True,
+                                row_deletable=True,
+                            ),
+
+                            dbc.Button('Add Row', id='button_model_wells', n_clicks=0),
+                            html.Div(id='editing_model_wells')
+                        ])], width=6, style={'margin-left': 14}),
+
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Параметры работы скважины')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dash_table.DataTable(
+                                id='table_model_Q',
+                                columns=[{'name': 'Скважина',
+                                          'id': 'Well'}] + [{
+                                    'name': '{}'.format(i),
+                                    'id': '{}'.format(i),
+                                    # 'deletable': True,
+                                    # 'renamable': True
+                                } for i in params_well_table],
+                                data=[
+
+                                ],
+                                editable=True,
+                                row_deletable=True,
+                            ),
+
+                            dbc.Button('Add Row', id='button_model_Q', n_clicks=0),
+                            html.Div(id='editing_model_Q')
+                        ])]),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Характеристика скважины')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dcc.Graph(id="graph_press_rate", figure=go.Figure(
+                                data=[go.Scatter(x=[100, 200, 300], y=[300, 200, 300], marker=dict(size=18))],
+                                layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)",
+                                                 margin=dict(l=0, r=0, t=0, b=0))))
+                        ])], width=6, style={'margin-left': 14}),
+
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Параметры работы скважины')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dcc.Graph(id="graph_diagnostic", figure=go.Figure(
+                                data=[go.Scatter(x=[100, 200, 300], y=[300, 200, 300], marker=dict(size=18))],
+                                layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)",
+                                                 margin=dict(l=0, r=0, t=0, b=0))))
+                        ])]),
+                ]),
+                dbc.Row([
+                    dbc.Col([html.Div('Адаптация')], width=12,
+                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
+                                   'color': 'black', 'background-color': '#edf3f4'}),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Варьируемые параметры')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dash_table.DataTable(
+                                id='table_adapt_param',
+                                columns=[{'name': 'Скважина',
+                                          'id': 'Well'}] + [{
+                                    'name': '{}'.format(i),
+                                    'id': '{}'.format(i),
+                                    # 'deletable': True,
+                                    # 'renamable': True
+                                } for i in params_well_table],
+                                data=[
+
+                                ],
+                                editable=True,
+                                row_deletable=True,
+                            ),
+
+                            dbc.Button('Add Row', id='button_adapt_param', n_clicks=0),
+                            html.Div(id='editing_adapt_param')
+                        ])], width=6, style={'margin-left': 14}),
+
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Параметры работы скважины')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dcc.Graph(id="graph_apadt_press", figure=go.Figure(
+                                data=[go.Scatter(x=[100, 200, 300], y=[300, 200, 300], marker=dict(size=18))],
+                                layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)",
+                                                 margin=dict(l=0, r=0, t=0, b=0))))
+                        ])]),
+                ]),
+                dbc.Row([
+                    dbc.Col([html.Div('Прогноз')], width=12,
+                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
+                                   'color': 'black', 'background-color': '#edf3f4'}),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Варьируемые парметры')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dash_table.DataTable(
+                                id='table_predict_param',
+                                columns=[{'name': 'Скважина',
+                                          'id': 'Well'}] + [{
+                                    'name': '{}'.format(i),
+                                    'id': '{}'.format(i),
+                                    # 'deletable': True,
+                                    # 'renamable': True
+                                } for i in params_well_table],
+                                data=[
+
+                                ],
+                                editable=True,
+                                row_deletable=True,
+                            ),
+
+                            dbc.Button('Add Row', id='button_predict_param', n_clicks=0),
+                            html.Div(id='editing_predict_param')
+                        ])], width=6, style={'margin-left': 14}),
+
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Прогноз работы')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dcc.Graph(id="graph_predict_param", figure=go.Figure(
+                                data=[go.Scatter(x=[100, 200, 300], y=[300, 200, 300], marker=dict(size=18))],
+                                layout=go.Layout(height=500, width=700, paper_bgcolor="rgba(0, 0, 0, 0)",
+                                                 margin=dict(l=0, r=0, t=0, b=0))))
+                        ])]),
+                ]),
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div('Параметры расчета эффективности')], width=12,
+                                style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
+                                       'margin-top': 10,
+                                       'color': 'black'}),
+                        ]),
+                        dbc.Row([
+                            dash_table.DataTable(
+                                id='table_predict_exonom',
+                                columns=[{'name': 'Скважина',
+                                          'id': 'Well'}] + [{
+                                    'name': '{}'.format(i),
+                                    'id': '{}'.format(i),
+                                    # 'deletable': True,
+                                    # 'renamable': True
+                                } for i in params_well_table],
+                                data=[
+
+                                ],
+                                editable=True,
+                                row_deletable=True,
+                            ),
+
+                            dbc.Button('Add Row', id='button_predict_exonom', n_clicks=0),
+                            html.Div(id='editing_predict_exonom')
+                        ])], width=6, style={'margin-left': 14}),
+
+                    dbc.Col([
+                        dbc.Row([
+                            html.Div('Дополнительная добыча')
+                        ])]),
+                ]),
+                dbc.Row([
+                    dbc.Col([html.Div('Результаты')], width=12,
+                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
+                                   'color': 'black', 'background-color': '#edf3f4'}),
                 ]),
                 dbc.Row([
                     dbc.Col([
@@ -378,11 +618,6 @@ def change_pagecontent(pathname):
                         ]),
 
                     ]),
-                ]),
-                dbc.Row([
-                    dbc.Col([html.Div('Модель скважины')], width=12,
-                            style={'font-size': 48, 'textAlign': 'center', 'font-style': 'oblique', 'margin-top': 10,
-                                   'color': 'black','background-color':'#edf3f4'}),
                 ]),
 
             ], style=CONTSTYLE_new),

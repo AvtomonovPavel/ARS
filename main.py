@@ -114,7 +114,13 @@ params_geo_table = [
 values_geo_table = [1.25, 50, 9.144, 0.3, 0.00247, 3, 34.47 ]
 params_well_table = [
     'Тип скважины', 'X координата', 'Y координата', 'Z координата',
-    'Радиус скважины, м', 'Дебит скважины, м3/сут'
+]
+params_model_well_table = [
+    'Тип скважины','Радиус скважины, м', 'Дебит скважины, м3/сут', 'Длина горизонтального ствола м',
+    'Толщина вскрытия м', 'Ширина трещины ГРП м'
+]
+params_model_Q_table = [
+    'Время, ч'
 ]
 # Инициализация
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP] , suppress_callback_exceptions = True)
@@ -256,7 +262,7 @@ def change_pagecontent(pathname):
                             dash_table.DataTable(
                                 id='table_wells',
                                 columns=[{'name': 'Скважина',
-                                         'id': 'Well'}]+[{
+                                         'id': 'Скважина'}]+[{
                                     'name': '{}'.format(i),
                                     'id': '{}'.format(i),
                                     #'deletable': True,
@@ -305,25 +311,21 @@ def change_pagecontent(pathname):
                                        'margin-top': 10,
                                        'color': 'black'}),
                         ]),
-                        dbc.Row([
+
+                        dbc.Row([dbc.Button('Add Data', id='button_model_wells_columns', n_clicks=0),
                             dash_table.DataTable(
                                 id='table_model_wells',
-                                columns=[{'name': 'Скважина',
-                                          'id': 'Well'}] + [{
-                                    'name': '{}'.format(i),
-                                    'id': '{}'.format(i),
-                                    # 'deletable': True,
-                                    # 'renamable': True
-                                } for i in params_well_table],
+                                columns=(
+                                        [{'id': 'Parameter', 'name': 'Parameter'}]
+                                ),
                                 data=[
-
+                                    dict(Parameter=params_model_well_table[i])
+                                    for i in range(len(params_model_well_table))
                                 ],
-                                editable=True,
-                                row_deletable=True,
+                                editable=True
                             ),
 
-                            dbc.Button('Add Row', id='button_model_wells', n_clicks=0),
-                            html.Div(id='editing_model_wells')
+
                         ])], width=6, style={'margin-left': 14}),
 
                     dbc.Col([
@@ -335,31 +337,29 @@ def change_pagecontent(pathname):
                                        'color': 'black'}),
                         ]),
                         dbc.Row([
+                            dbc.Button('Add Data', id='button_model_Q_columns', n_clicks=0),
                             dash_table.DataTable(
                                 id='table_model_Q',
-                                columns=[{'name': 'Скважина',
-                                          'id': 'Well'}] + [{
+                                columns=[{
                                     'name': '{}'.format(i),
                                     'id': '{}'.format(i),
                                     # 'deletable': True,
                                     # 'renamable': True
-                                } for i in params_well_table],
+                                } for i in params_model_Q_table],
                                 data=[
 
                                 ],
                                 editable=True,
                                 row_deletable=True,
                             ),
-
                             dbc.Button('Add Row', id='button_model_Q', n_clicks=0),
-                            html.Div(id='editing_model_Q')
                         ])]),
                 ]),
                 dbc.Row([
                     dbc.Col([
                         dbc.Row([
                             dbc.Col([
-                                html.Div('Характеристика скважины')], width=12,
+                                html.Div('Диагностический график')], width=12,
                                 style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                        'margin-top': 10,
                                        'color': 'black'}),
@@ -374,7 +374,7 @@ def change_pagecontent(pathname):
                     dbc.Col([
                         dbc.Row([
                             dbc.Col([
-                                html.Div('Параметры работы скважины')], width=12,
+                                html.Div('Давление / Дебит')], width=12,
                                 style={'font-size': 24, 'textAlign': 'center', 'font-style': 'oblique',
                                        'margin-top': 10,
                                        'color': 'black'}),
@@ -418,7 +418,6 @@ def change_pagecontent(pathname):
                             ),
 
                             dbc.Button('Add Row', id='button_adapt_param', n_clicks=0),
-                            html.Div(id='editing_adapt_param')
                         ])], width=6, style={'margin-left': 14}),
 
                     dbc.Col([
@@ -694,24 +693,56 @@ app.layout = html.Div([
 # Callbacks
 
 @app.callback(
-    Output('table_wells', 'columns'),
-    Input('editing-columns-button', 'n_clicks'),
-    State('table_wells-name', 'value'),
-    State('table_wells', 'columns'))
-def update_columns(n_clicks, value, existing_columns):
-    if n_clicks > 0:
-        existing_columns.append({
-            'id': value, 'name': value,
-            'renamable': True, 'deletable': True
-        })
+    Output('table_model_Q', 'columns'),
+    Input('table_wells', 'data'),
+    Input('button_model_Q_columns', 'n_clicks'),
+    State('table_model_Q', 'columns'))
+def update_columns(rows, n_clicks,  existing_columns):
+    i = 1
+    if n_clicks == 1:
+        for row in rows:
+            print(row.get('Скважина', None))
+            if (row.get('Тип скважины', None) != "a"):
+                existing_columns.append({
+                'id': "Pressure {}".format(row.get('Скважина', None)), 'name': "Preessure {}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+                i +=1
+                existing_columns.append({
+                'id': "Rate {}".format(row.get('Скважина', None)), 'name': "Rate {}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+    return existing_columns
+@app.callback(
+    Output('table_model_wells', 'columns'),
+    Input('table_wells', 'data'),
+    Input('button_model_wells_columns', 'n_clicks'),
+    State('table_model_wells', 'columns'))
+def update_columns(rows, n_clicks,  existing_columns):
+    i = 1
+    if n_clicks == 1:
+        for row in rows:
+            if (row.get('Тип скважины', None) != "a"):
+                existing_columns.append({
+                'id': "{}".format(row.get('Скважина', None)), 'name': "{}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+                i +=1
     return existing_columns
 
-
+@app.callback(
+    Output('table_model_Q', 'data'),
+    Input('button_model_Q', 'n_clicks'),
+    State('table_model_Q', 'data'),
+    State('table_model_Q', 'columns'))
+def add_row(n_clicks, rows, columns):
+    if n_clicks > 0:
+        rows.append({c['id']: '' for c in columns})
+    return rows
 @app.callback(
     Output("graph_wells", 'figure'),
-    Input('table_wells', 'data'),
-    Input('table_wells', 'columns'))
-def display_output(rows, columns):
+    Input('table_wells', 'data'))
+def display_output(rows):
     trace_list = []
     for row in rows:
         if (row.get('Тип скважины', None) == "0"):

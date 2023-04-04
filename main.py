@@ -116,11 +116,20 @@ params_well_table = [
     'Тип скважины', 'X координата', 'Y координата', 'Z координата',
 ]
 params_model_well_table = [
-    'Тип скважины','Радиус скважины, м', 'Дебит скважины, м3/сут', 'Длина горизонтального ствола м',
+    'Тип скважины','Радиус скважины, м', 'Дебит скважины, м3/сут','Время, ч', 'Длина горизонтального ствола м',
     'Толщина вскрытия м', 'Ширина трещины ГРП м'
 ]
 params_model_Q_table = [
     'Время, ч'
+]
+params_adapt_table = [
+    'Проницаемость мин, мД','Проницаемость макс, мД'
+]
+params_predict_table = [
+    'Время прогноза, ч','Забойное давление, МПа'
+]
+params_predict_econom_table = [
+    'Стоимость нефти, руб/т','Стоимость проведения ГТМ, тыс. руб'
 ]
 # Инициализация
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP] , suppress_callback_exceptions = True)
@@ -401,23 +410,21 @@ def change_pagecontent(pathname):
                                        'color': 'black'}),
                         ]),
                         dbc.Row([
+
+                            dbc.Button('Add Data', id='button_adapt_param', n_clicks=0),
                             dash_table.DataTable(
                                 id='table_adapt_param',
-                                columns=[{'name': 'Скважина',
-                                          'id': 'Well'}] + [{
-                                    'name': '{}'.format(i),
-                                    'id': '{}'.format(i),
-                                    # 'deletable': True,
-                                    # 'renamable': True
-                                } for i in params_well_table],
+                                columns=(
+                                    [{'id': 'Parameter', 'name': 'Parameter'}]
+                                ),
                                 data=[
-
+                                    dict(Parameter=params_adapt_table[i])
+                                    for i in range(len(params_adapt_table))
                                 ],
                                 editable=True,
                                 row_deletable=True,
                             ),
 
-                            dbc.Button('Add Row', id='button_adapt_param', n_clicks=0),
                         ])], width=6, style={'margin-left': 14}),
 
                     dbc.Col([
@@ -450,24 +457,21 @@ def change_pagecontent(pathname):
                                        'color': 'black'}),
                         ]),
                         dbc.Row([
+                            dbc.Button('Add Data', id='button_predict_param', n_clicks=0),
                             dash_table.DataTable(
                                 id='table_predict_param',
-                                columns=[{'name': 'Скважина',
-                                          'id': 'Well'}] + [{
-                                    'name': '{}'.format(i),
-                                    'id': '{}'.format(i),
-                                    # 'deletable': True,
-                                    # 'renamable': True
-                                } for i in params_well_table],
+                                columns=(
+                                    [{'id': 'Parameter', 'name': 'Parameter'}]
+                                ),
                                 data=[
-
+                                    dict(Parameter=params_predict_table[i])
+                                    for i in range(len(params_predict_table))
                                 ],
+
                                 editable=True,
                                 row_deletable=True,
                             ),
 
-                            dbc.Button('Add Row', id='button_predict_param', n_clicks=0),
-                            html.Div(id='editing_predict_param')
                         ])], width=6, style={'margin-left': 14}),
 
                     dbc.Col([
@@ -495,24 +499,21 @@ def change_pagecontent(pathname):
                                        'color': 'black'}),
                         ]),
                         dbc.Row([
+                            dbc.Button('Add Row', id='button_predict_econom', n_clicks=0),
                             dash_table.DataTable(
-                                id='table_predict_exonom',
-                                columns=[{'name': 'Скважина',
-                                          'id': 'Well'}] + [{
-                                    'name': '{}'.format(i),
-                                    'id': '{}'.format(i),
-                                    # 'deletable': True,
-                                    # 'renamable': True
-                                } for i in params_well_table],
+                                id='table_predict_econom',
+                                columns=(
+                                    [{'id': 'Parameter', 'name': 'Parameter'}]
+                                ),
                                 data=[
-
+                                    dict(Parameter=params_predict_econom_table[i])
+                                    for i in range(len(params_predict_econom_table))
                                 ],
                                 editable=True,
                                 row_deletable=True,
                             ),
 
-                            dbc.Button('Add Row', id='button_predict_exonom', n_clicks=0),
-                            html.Div(id='editing_predict_exonom')
+
                         ])], width=6, style={'margin-left': 14}),
 
                     dbc.Col([
@@ -730,6 +731,54 @@ def update_columns(rows, n_clicks,  existing_columns):
                 i +=1
     return existing_columns
 
+@app.callback(
+    Output('table_adapt_param', 'columns'),
+    Input('table_wells', 'data'),
+    Input('button_adapt_param', 'n_clicks'),
+    State('table_adapt_param', 'columns'))
+def update_columns(rows, n_clicks,  existing_columns):
+    i = 1
+    if n_clicks == 1:
+        for row in rows:
+            if (row.get('Тип скважины', None) != "a"):
+                existing_columns.append({
+                'id': "{}".format(row.get('Скважина', None)), 'name': "{}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+                i +=1
+    return existing_columns
+@app.callback(
+    Output('table_predict_param', 'columns'),
+    Input('table_wells', 'data'),
+    Input('button_predict_param', 'n_clicks'),
+    State('table_predict_param', 'columns'))
+def update_columns(rows, n_clicks,  existing_columns):
+    i = 1
+    if n_clicks == 1:
+        for row in rows:
+            if (row.get('Тип скважины', None) != "a"):
+                existing_columns.append({
+                'id': "{}".format(row.get('Скважина', None)), 'name': "{}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+                i +=1
+    return existing_columns
+@app.callback(
+    Output('table_predict_econom', 'columns'),
+    Input('table_wells', 'data'),
+    Input('button_predict_econom', 'n_clicks'),
+    State('table_predict_econom', 'columns'))
+def update_columns(rows, n_clicks,  existing_columns):
+    i = 1
+    if n_clicks == 1:
+        for row in rows:
+            if (row.get('Тип скважины', None) != "a"):
+                existing_columns.append({
+                'id': "{}".format(row.get('Скважина', None)), 'name': "{}".format(row.get('Скважина', None)),
+                'renamable': True, 'deletable': True
+            })
+                i +=1
+    return existing_columns
 @app.callback(
     Output('table_model_Q', 'data'),
     Input('button_model_Q', 'n_clicks'),
